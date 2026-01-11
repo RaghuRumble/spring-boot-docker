@@ -22,10 +22,25 @@ jobs:
 
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
 
-      - name: Build Docker image
-        run: docker build -t ${{secrets.ECR_REPO}}:latest .
+      - name: Build with Maven
+        run: mvn -B package -DskipTests
 
-      - name: Push Docker image to Amazon ECR
-        run: |
-          docker push ${{secrets.ECR_REPO}}:latest
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Docker/Dockerfile
+          push: true
+          tags: ${{secrets.ECR_REPO}}:latest
